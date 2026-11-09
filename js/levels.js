@@ -1852,14 +1852,14 @@ const LEVELS = [
     id: 43,
     tier: "intermediario",
     certModule: "INNER JOIN — Cruzamento de Tabelas",
-    title: "Nível 43: Transações de Contas Suspeitas",
-    briefing: "O time financeiro sinalizou algumas contas bancárias corporativas como suspeitas após o incidente. Dra. Vance precisa ver todas as transações realizadas por essas contas específicas.",
-    objective: "Cruze a tabela 'bank_transactions' com 'bank_accounts' através da coluna 'account_id'. Projete 'transaction_id', 'account_holder' e 'transaction_amount' apenas para transações cuja conta tenha 'account_status' igual a 'Suspeita'. Ordene o resultado por 'transaction_id' de forma crescente.",
+    title: "Nível 43: Transações sem Titular Identificado",
+    briefing: "O banco recebeu transações de contas que não aparecem no cadastro. Dra. Vance quer ver todas as transações, inclusive as que não têm titular, para medir o tamanho real do problema.",
+    objective: "Use RIGHT JOIN para cruzar 'bank_accounts' com 'bank_transactions' pela coluna 'account_id', mantendo todas as transações. Projete 'transaction_id', 'account_holder' e 'transaction_amount'. Transações sem conta cadastrada devem aparecer com 'account_holder' NULL. Ordene por 'transaction_id' em ordem crescente.",
     theory: {
-        title: "INNER JOIN — Combinando Tabelas Relacionadas",
-        explanation: "Dados relacionais vivem espalhados em tabelas diferentes, conectadas por chaves. O INNER JOIN junta as linhas de duas tabelas onde essa chave coincide. Se uma linha de um lado não tiver correspondência do outro, ela não aparece no resultado.",
-        syntax: "SELECT a.coluna1, b.coluna2\nFROM tabela_a a\nJOIN tabela_b b ON a.chave = b.chave\nWHERE b.condicao = valor;",
-        example: "-- Movimentações de estoque de produtos descontinuados\nSELECT mv.movimentacao_id, pr.nome_produto\nFROM movimentacoes_estoque mv\nJOIN produtos pr ON mv.produto_id = pr.id\nWHERE pr.status = 'Descontinuado';"
+        title: "RIGHT JOIN — Preservando a tabela da direita",
+        explanation: "O RIGHT JOIN mantém todas as linhas da tabela da direita, mesmo quando não há correspondência do lado esquerdo. Onde não há par, as colunas da tabela da esquerda aparecem como NULL. Ele é o espelho do LEFT JOIN: a diferença está só em qual tabela você quer preservar. Muita gente prefere escrever tudo com LEFT JOIN invertendo a ordem, mas o RIGHT JOIN deixa a intenção explícita.",
+        syntax: "SELECT a.coluna1, b.coluna2\nFROM tabela_a a\nRIGHT JOIN tabela_b b ON a.chave = b.chave;",
+        example: "-- Todas as movimentações de estoque, mesmo as de produtos sem cadastro\nSELECT pr.nome_produto, mv.movimentacao_id\nFROM produtos pr\nRIGHT JOIN movimentacoes_estoque mv ON pr.id = mv.produto_id;"
     },
     schemaDDL: `
         CREATE TABLE bank_accounts (
@@ -1887,32 +1887,32 @@ const LEVELS = [
         (2, 8000),
         (1, 700),
         (4, 12000),
-        (3, 450);
+        (3, 450),
+        (9, 900);
     `,
     expectedQuery: `
         SELECT
             t.transaction_id,
             a.account_holder,
             t.transaction_amount
-        FROM bank_transactions t
-        JOIN bank_accounts a ON t.account_id = a.account_id
-        WHERE a.account_status = 'Suspeita'
+        FROM bank_accounts a
+        RIGHT JOIN bank_transactions t ON a.account_id = t.account_id
         ORDER BY t.transaction_id ASC;
     `,
-    hint: "Utilize INNER JOIN entre bank_transactions e bank_accounts em account_id, filtrando WHERE a.account_status = 'Suspeita'."
+    hint: "Use RIGHT JOIN com bank_transactions do lado direito, em account_id, e ORDER BY transaction_id ASC. Transações sem conta ficam com account_holder NULL."
 },
 {
     id: 44,
     tier: "intermediario",
     certModule: "INNER JOIN — Cruzamento de Tabelas",
-    title: "Nível 44: Pacotes em Transportadoras Ativas",
-    briefing: "Parte do incidente envolveu hardware físico sendo movido entre instalações. Dra. Vance quer rastrear apenas os pacotes que estão atualmente com transportadoras ativas, já que as inativas não deveriam ter carga em trânsito.",
-    objective: "Cruze a tabela 'cargo_packages' com 'carriers' através da coluna 'carrier_id'. Projete 'package_id', 'tracking_code' e 'carrier_name' apenas para pacotes cuja transportadora tenha 'is_active' igual a 1. Ordene o resultado por 'package_id' de forma crescente.",
+    title: "Nível 44: Conciliação de Pacotes e Transportadoras",
+    briefing: "A auditoria de cargas encontrou pacotes com código de transportadora inexistente e transportadoras cadastradas sem nenhum pacote. Dra. Vance quer um relatório que mostre os dois casos.",
+    objective: "Use FULL OUTER JOIN para conciliar 'cargo_packages' e 'carriers' pela coluna 'carrier_id'. Projete 'package_id', 'tracking_code' e 'carrier_name'. Pacotes sem transportadora e transportadoras sem pacote devem aparecer, com NULL no lado sem correspondência. Ordene por 'tracking_code' e depois por 'carrier_name', ambos em ordem crescente.",
     theory: {
-        title: "INNER JOIN — Combinando Tabelas Relacionadas",
-        explanation: "Dados relacionais vivem espalhados em tabelas diferentes, conectadas por chaves. O INNER JOIN junta as linhas de duas tabelas onde essa chave coincide. Se uma linha de um lado não tiver correspondência do outro, ela não aparece no resultado.",
-        syntax: "SELECT a.coluna1, b.coluna2\nFROM tabela_a a\nJOIN tabela_b b ON a.chave = b.chave\nWHERE b.condicao = valor;",
-        example: "-- Reservas feitas em unidades hoteleiras atualmente abertas\nSELECT rs.reserva_id, un.nome_unidade\nFROM reservas rs\nJOIN unidades un ON rs.unidade_id = un.id\nWHERE un.aberta = 1;"
+        title: "FULL OUTER JOIN — Preservando os dois lados",
+        explanation: "O FULL OUTER JOIN combina LEFT JOIN e RIGHT JOIN: mantém todas as linhas dos dois lados. Onde não existe correspondência, a coluna do outro lado aparece como NULL. Ele é útil para conciliações, porque a ausência de dados em qualquer lado também é informação que precisa aparecer no relatório.",
+        syntax: "SELECT a.coluna1, b.coluna2\nFROM tabela_a a\nFULL OUTER JOIN tabela_b b ON a.chave = b.chave;",
+        example: "-- Conciliar pedidos e pagamentos: mostra pedidos sem pagamento e pagamentos sem pedido\nSELECT pe.pedido_id, pg.pagamento_id\nFROM pedidos pe\nFULL OUTER JOIN pagamentos pg ON pe.pedido_id = pg.pedido_id;"
     },
     schemaDDL: `
         CREATE TABLE carriers (
@@ -1931,7 +1931,8 @@ const LEVELS = [
         (1, 'LogEx', 1),
         (2, 'TransRapido', 0),
         (3, 'CargoMax', 1),
-        (4, 'EntregaJa', 0);
+        (4, 'EntregaJa', 0),
+        (5, 'NovaRota', 1);
         INSERT INTO cargo_packages (tracking_code, carrier_id) VALUES
         ('BR001', 1),
         ('BR002', 2),
@@ -1940,7 +1941,8 @@ const LEVELS = [
         ('BR005', 1),
         ('BR006', 3),
         ('BR007', 2),
-        ('BR008', 1);
+        ('BR008', 1),
+        ('BR009', 9);
     `,
     expectedQuery: `
         SELECT
@@ -1948,24 +1950,23 @@ const LEVELS = [
             p.tracking_code,
             c.carrier_name
         FROM cargo_packages p
-        JOIN carriers c ON p.carrier_id = c.carrier_id
-        WHERE c.is_active = 1
-        ORDER BY p.package_id ASC;
+        FULL OUTER JOIN carriers c ON p.carrier_id = c.carrier_id
+        ORDER BY p.tracking_code ASC, c.carrier_name ASC;
     `,
-    hint: "Utilize INNER JOIN entre cargo_packages e carriers em carrier_id, filtrando WHERE c.is_active = 1."
+    hint: "Use FULL OUTER JOIN entre cargo_packages e carriers em carrier_id. Os NULL aparecem onde não há correspondência. Ordene por tracking_code e carrier_name."
 },
 {
     id: 45,
     tier: "intermediario",
     certModule: "INNER JOIN — Cruzamento de Tabelas",
-    title: "Nível 45: Pedidos de Clientes VIP",
-    briefing: "O sistema de e-commerce corporativo foi um dos pontos de entrada investigados. Dra. Vance quer isolar os pedidos feitos por clientes da categoria VIP, que têm permissões estendidas no sistema e por isso são alvos de maior risco.",
-    objective: "Cruze a tabela 'customer_orders' com 'customers' através da coluna 'customer_id'. Projete 'order_id', 'customer_name' e 'order_total' apenas para pedidos cujo cliente tenha 'customer_category' igual a 'VIP'. Ordene o resultado por 'order_id' de forma crescente.",
+    title: "Nível 45: Convites para Clientes VIP",
+    briefing: "A campanha de relacionamento precisa testar cada cliente VIP em cada canal de contato, para medir qual canal responde melhor. Todas as combinações entram no teste.",
+    objective: "Use CROSS JOIN entre 'customers' e 'contact_channels' para gerar todas as combinações de clientes VIP com canais de contato. Projete 'customer_name' e 'channel_name'. Ordene por 'customer_name' e depois por 'channel_name', ambos em ordem crescente. CROSS JOIN não usa ON.",
     theory: {
-        title: "INNER JOIN — Combinando Tabelas Relacionadas",
-        explanation: "Dados relacionais vivem espalhados em tabelas diferentes, conectadas por chaves. O INNER JOIN junta as linhas de duas tabelas onde essa chave coincide. Se uma linha de um lado não tiver correspondência do outro, ela não aparece no resultado.",
-        syntax: "SELECT a.coluna1, b.coluna2\nFROM tabela_a a\nJOIN tabela_b b ON a.chave = b.chave\nWHERE b.condicao = valor;",
-        example: "-- Ingressos comprados por participantes com credencial Premium\nSELECT ing.ingresso_id, part.nome\nFROM ingressos ing\nJOIN participantes part ON ing.participante_id = part.id\nWHERE part.credencial = 'Premium';"
+        title: "CROSS JOIN — Todas as combinações",
+        explanation: "O CROSS JOIN não tem condição de junção: cada linha de uma tabela é combinada com cada linha da outra. Se uma tabela tem 3 linhas e a outra tem 4, o resultado tem 12. Ele serve para gerar grades, como turnos × salas ou produtos × canais. Sem um WHERE, o resultado cresce muito rápido, então use com cuidado.",
+        syntax: "SELECT a.coluna1, b.coluna2\nFROM tabela_a a\nCROSS JOIN tabela_b b;",
+        example: "-- Todas as combinações de turno e sala para a escala de plantão\nSELECT t.turno, s.sala\nFROM turnos t\nCROSS JOIN salas s;"
     },
     schemaDDL: `
         CREATE TABLE customers (
@@ -1973,10 +1974,9 @@ const LEVELS = [
             customer_name TEXT NOT NULL,
             customer_category TEXT NOT NULL
         );
-        CREATE TABLE customer_orders (
-            order_id INTEGER PRIMARY KEY,
-            customer_id INTEGER NOT NULL,
-            order_total REAL NOT NULL
+        CREATE TABLE contact_channels (
+            channel_id INTEGER PRIMARY KEY,
+            channel_name TEXT NOT NULL
         );
     `,
     seedData: `
@@ -1985,26 +1985,21 @@ const LEVELS = [
         (2, 'Thiago Barros', 'VIP'),
         (3, 'Vanessa Cruz', 'Regular'),
         (4, 'Wagner Dias', 'VIP');
-        INSERT INTO customer_orders (customer_id, order_total) VALUES
-        (1, 200),
-        (2, 1500),
-        (3, 300),
-        (4, 2000),
-        (2, 800),
-        (1, 250),
-        (4, 1200);
+        INSERT INTO contact_channels (channel_name) VALUES
+        ('Email'),
+        ('SMS'),
+        ('Telefone');
     `,
     expectedQuery: `
         SELECT
-            o.order_id,
             c.customer_name,
-            o.order_total
-        FROM customer_orders o
-        JOIN customers c ON o.customer_id = c.customer_id
+            ch.channel_name
+        FROM customers c
+        CROSS JOIN contact_channels ch
         WHERE c.customer_category = 'VIP'
-        ORDER BY o.order_id ASC;
+        ORDER BY c.customer_name ASC, ch.channel_name ASC;
     `,
-    hint: "Utilize INNER JOIN entre customer_orders e customers em customer_id, filtrando WHERE c.customer_category = 'VIP'."
+    hint: "Use CROSS JOIN entre customers e contact_channels, sem ON. Filtre WHERE c.customer_category = 'VIP' e ordene por customer_name e channel_name."
 },
 {
     id: 46,
