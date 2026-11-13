@@ -1095,28 +1095,36 @@ const KoraCert = (() => {
             });
         }
 
-        // Assinatura logo abaixo dos projetos
-        y += 22;
-        ctx.textAlign = "center";
-        ctx.fillStyle = ink; ctx.font = "56px 'Great Vibes', 'Brush Script MT', cursive";
-        ctx.fillText("Márcia Rodrigues Campos", W / 2, y + 40);
-        ctx.strokeStyle = "rgba(29,23,54,.35)"; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(W / 2 - 230, y + 58); ctx.lineTo(W / 2 + 230, y + 58); ctx.stroke();
-        ctx.font = "19px 'JetBrains Mono', monospace"; ctx.fillStyle = "#4b4466";
-        ctx.fillText("Márcia Rodrigues Campos · Founder · Kora EduTech", W / 2, y + 86);
+        // Linha final logo abaixo dos projetos: assinatura à esquerda, verificação e QR à direita
+        const top = y + 34;
+        const sigCx = 90 + 215;
+        ctx.textAlign = "center"; ctx.fillStyle = ink;
+        ctx.font = "52px 'Great Vibes', 'Brush Script MT', cursive";
+        ctx.fillText("Márcia R. Campos", sigCx, top + 48);
+        ctx.strokeStyle = ink; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(90, top + 66); ctx.lineTo(520, top + 66); ctx.stroke();
+        ctx.font = "21px Georgia, serif"; ctx.fillStyle = ink;
+        ctx.fillText("Márcia Rodrigues Campos", sigCx, top + 96);
+        ctx.font = "18px Georgia, serif"; ctx.fillStyle = "#6b6458";
+        ctx.fillText("Founder · Kora EduTech", sigCx, top + 122);
 
-        // Rodapé: QR, código e verificação
-        const fy = H - 210;
         const qr = qrCanvas(url);
-        ctx.textAlign = "left";
-        if (qr) { ctx.fillStyle = "#fff"; ctx.fillRect(84, fy - 6, 152, 152); ctx.drawImage(qr, 90, fy, 140, 140); }
-        const tx = qr ? 262 : 90;
-        ctx.fillStyle = ink; ctx.font = "bold 22px 'JetBrains Mono', monospace";
-        ctx.fillText(`Código de verificação: ${c}`, tx, fy + 40);
-        ctx.font = "18px 'JetBrains Mono', monospace"; ctx.fillStyle = "#4b4466";
-        const vtxt = url ? url.replace(/^https?:\/\//, "") : "Verifique o código no site da Kora EduTech";
-        wrap(ctx, vtxt, W - tx - 90).slice(0, 2).forEach((l, k) => ctx.fillText(l, tx, fy + 74 + k * 24));
-        ctx.font = "italic 19px Georgia, serif"; ctx.fillStyle = "#6b6485";
-        ctx.fillText("Curso livre de formação prática.", tx, fy + 132);
+        const boxX = W - 90 - 146, boxY = top - 14;
+        if (qr) { ctx.fillStyle = "#fff"; ctx.fillRect(boxX, boxY, 146, 146); ctx.drawImage(qr, boxX + 8, boxY + 8, 130, 130); }
+        const tx = qr ? boxX - 14 : W - 90;
+        const maxTw = tx - 560;
+        const where = (Site.verifyBase() || "site da Kora EduTech").replace(/^https?:\/\//, "");
+        ctx.textAlign = "right";
+        const fit = (txt, weight, size) => { let f = size; ctx.font = `${weight} ${f}px 'JetBrains Mono', monospace`; while (ctx.measureText(txt).width > maxTw && f > 11) { f--; ctx.font = `${weight} ${f}px 'JetBrains Mono', monospace`; } };
+        fit("verifique em", "400", 16); ctx.fillStyle = "#6b6458"; ctx.fillText("verifique em", tx, top + 82);
+        fit(where, "600", 16); ctx.fillStyle = ink; ctx.fillText(where, tx, top + 106);
+        ctx.font = "400 16px 'JetBrains Mono', monospace"; ctx.fillStyle = "#6b6458";
+        const codeTxt = "código "; const cw = (ctx.font = "600 16px 'JetBrains Mono', monospace", ctx.measureText(c).width);
+        ctx.fillStyle = ink; ctx.fillText(c, tx, top + 130);
+        ctx.font = "400 16px 'JetBrains Mono', monospace"; ctx.fillStyle = "#6b6458"; ctx.fillText(codeTxt, tx - cw, top + 130);
+
+        // Rodapé centralizado
+        ctx.textAlign = "center"; ctx.font = "15px Georgia, serif"; ctx.fillStyle = "#6b6458";
+        ctx.fillText("Curso livre de formação prática.", W / 2, H - 58);
     }
 
     function fileBase() {
