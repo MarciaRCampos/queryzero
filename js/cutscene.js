@@ -30,6 +30,7 @@ const Cutscene = (() => {
                 <span class="cine-dots"></span>
                 <button type="button" class="cine-skip" title="Pular cena (Esc)">Pular ⏭</button>
             </div>
+            <div class="cine-place" hidden></div>
             <div class="cine-dialog">
                 <div class="cine-name"></div>
                 <p class="cine-text" aria-live="polite"></p>
@@ -92,6 +93,9 @@ const Cutscene = (() => {
             });
             renderGlint(shot);
             renderDots();
+            const placeEl = root.querySelector(".cine-place");
+            placeEl.textContent = shot.place || "";
+            placeEl.hidden = !shot.place;
             if (shot.fx && shot.fx.includes("alarm")) GameAudio.sfx("alarm");
             showLine();
         }, reduceMotion() ? 0 : 320);

@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Operação QueryZero · Kora EduTech</title>
+    <meta name="theme-color" content="#070a13">
+    <link rel="icon" href="data:,">
+    <!-- Bibliotecas Externas via CDN (sql.js WASM loader, jsPDF e JSZip) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700;800&family=Great+Vibes&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/terminal.css">
+    <link rel="stylesheet" href="css/cinema.css">
+    <link rel="stylesheet" href="css/kora.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Top Navbar -->
+        <header class="top-nav">
+            <div class="nav-brand">
+                <button type="button" class="back-btn inline" onclick="Nav.back()" title="Voltar ao menu (Esc)" aria-label="Voltar ao menu">← Menu</button>
+                <img class="nav-logo kora-logo" alt="Kora EduTech" src="">
+                <span class="cyber-badge">[CLASSIFIED]</span>
+                <span class="brand-title">OPERAÇÃO QUERYZERO</span>
+                <span class="brand-sub">// SRE FORENSIC ENGINE</span>
+            </div>
+            <div class="nav-player">
+                <label for="player-name-field">ESPECIALISTA:</label>
+                <input type="text" id="player-name-field" placeholder="Seu nome completo" autocomplete="off">
+            </div>
+            <div class="nav-tools">
+                <button type="button" class="tool-btn" id="btn-sound" onclick="toggleSound()" title="Música e efeitos sonoros" aria-label="Música e efeitos sonoros">🔊</button>
+                <button type="button" class="tool-btn" id="btn-voice" onclick="toggleVoice()" title="Voz dos personagens nas cenas" aria-label="Voz dos personagens">🗣</button>                <button type="button" class="tool-btn tool-gold" id="btn-treasures" onclick="Treasures.openCollection()" title="Cofre de tesouros">💎 <span id="treasure-count">0/12</span></button>
+                <button type="button" class="tool-btn" id="btn-scenes" onclick="openScenes()" title="Rever cenas da história">🎬 Cenas</button>
+                <button type="button" class="tool-btn" id="btn-portfolio" onclick="Projects.open()" title="Projetos de portfólio para o GitHub">📁 Projetos</button>
+                <button type="button" class="tool-btn" onclick="Achievements.open()" title="Conquistas e medalhas">🏅</button>
+                <button type="button" class="tool-btn" onclick="Challenge.open()" title="Desafiar um amigo">🤝</button>
+                <button type="button" class="tool-btn" onclick="KoraCert.open()" title="Certificados">🎓</button>
+            </div>
+            <div class="score-hud" id="score-hud" aria-live="polite"></div>
+            <div class="nav-status">
+                <span class="status-indicator"></span>
+                <span id="engine-status">INICIALIZANDO WASM...</span>
+                <span class="node-badge">SEDE: FLORIANÓPOLIS (SC) · CLUSTER V9</span>
+            </div>
+        </header>
+
+        <!-- Progress Track -->
+        <div class="progress-bar-container">
+            <div class="progress-steps" id="progress-steps">
+                <!-- Preenchido dinamicamente via JS -->
+            </div>
+        </div>
+
+        <div id="quick-banner" class="quick-banner" hidden></div>
+
+        <!-- Main Workspace Grid -->
+        <main class="workspace-grid">
+            <!-- Left Column: Mission Dossier & Schema -->
+            <section class="panel dossier-panel">
+                <div class="panel-header">
+                    <h2>DOSSIÊ DA MISSÃO</h2>
+                    <div class="header-badges">
+                        <span id="tier-badge" class="tier-indicator">TRILHA: BÁSICO</span>
+                        <span id="level-badge" class="level-indicator">Fase 1 / 90</span>
+                    </div>
+                </div>
+                <div class="panel-body">
+                    <div id="quick-offer" class="quick-offer" hidden></div>
+                    <h3 id="mission-title" class="mission-title">Carregando...</h3>
+
+                    <div class="dossier-card">
+                        <div class="dossier-label">RELATÓRIO DE INCIDENTE // DRA. MAYA VANCE:</div>
+                        <p id="mission-briefing" class="briefing-text"></p>
+                    </div>
+
+                    <div class="objective-card">
+                        <div class="dossier-label">DIRETIVA DE INTEGRIDADE:</div>
+                        <p id="mission-objective" class="objective-text"></p>
+                    </div>
+
+                    <!-- Theory / Concept Box -->
+                    <div class="theory-box">
+                        <button id="btn-toggle-theory" class="btn-theory-toggle" onclick="toggleTheory()">
+                            📚 <span id="theory-title-preview">Ver Explicação do Conceito</span>
+                        </button>
+                        <div id="theory-content" class="theory-content" style="display: none;">
+                            <div class="dossier-label">CONCEITO TÉCNICO:</div>
+                            <p id="theory-explanation" class="theory-text"></p>
+                            <div class="dossier-label theory-sub-label">SINTAXE GERAL:</div>
+                            <pre id="theory-syntax" class="theory-code"></pre>
+                            <div class="dossier-label theory-sub-label">EXEMPLO ILUSTRATIVO:</div>
+                            <pre id="theory-example" class="theory-code"></pre>
+                        </div>
+                    </div>
+
+                    <!-- Schema Inspector -->
+                    <div class="schema-inspector">
+                        <div class="schema-header">
+                            <span class="dossier-label">METADADOS RELACIONAIS (TABELAS ATIVAS):</span>
+                        </div>
+                        <div id="schema-tree" class="schema-tree"></div>
+                        <div id="vault-radar" class="vault-radar" hidden></div>
+                    </div>
+
+                    <!-- Hint Box -->
+                    <div class="hint-box">
+                        <button id="btn-toggle-hint" class="btn-subtle" onclick="toggleHint()">Exibir Dica Técnica</button>
+                        <p id="mission-hint" class="hint-text" style="display: none;"></p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right Column: Terminal Console & Results -->
+            <section class="panel terminal-panel">
+                <div class="panel-header">
+                    <h2>TERMINAL DE COMANDOS SQL</h2>
+                    <span class="term-tools">
+                        <span id="relampago-timer" class="relampago-timer" hidden>⚡ 3:00</span>
+                        <button type="button" id="btn-relampago" class="tool-btn" onclick="Score.toggleRelampago()" title="Modo relâmpago: 3 minutos por fase, bônus de pontos">⚡ Relâmpago</button>
+                        <span class="shortcut-tip">[Ctrl + Enter]</span>
+                    </span>
+                </div>
+                <div class="panel-body">
+                    <div class="editor-wrapper">
+                        <div class="editor-gutter">
+                            <span>01</span><span>02</span><span>03</span><span>04</span><span>05</span><span>06</span><span>07</span><span>08</span><span>09</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span>
+                        </div>
+                        <textarea id="sql-input" spellcheck="false" placeholder="-- Insira sua consulta SQL aqui para restaurar a integridade relacional..."></textarea>
+                    </div>
+
+                    <div class="terminal-actions">
+                        <div class="action-left">
+                            <button id="btn-run" class="btn btn-primary" onclick="handleRunQuery()">
+                                <span class="btn-icon">⚡</span> EXECUTAR CONSULTA
+                            </button>
+                            <button id="btn-reset" class="btn btn-secondary" onclick="handleResetDatabase()">
+                                REINICIAR BANCO
+                            </button>
+                        </div>
+                        <div class="action-right">
+                            <button id="btn-show-schema-data" class="btn btn-secondary" onclick="toggleDataPreview()">
+                                INSPECIONAR DADOS
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Feedback Alert Banner -->
+                    <div id="feedback-banner" class="feedback-banner" style="display: none;">
+                        <div class="feedback-icon" id="feedback-icon">✔</div>
+                        <div class="feedback-content">
+                            <div class="feedback-title" id="feedback-title">SUCESSO</div>
+                            <div class="feedback-msg" id="feedback-msg"></div>
+                        </div>
+                        <button id="btn-cert-tier" class="btn btn-gold" style="display: none;" onclick="handleDownloadTierCertificate()">
+                            🎖 CERTIFICADO DA TRILHA
+                        </button>
+                        <button id="btn-next-level" class="btn btn-success" style="display: none;" onclick="handleNextLevel()">
+                            PRÓXIMA FASE ➔
+                        </button>
+                    </div>
+
+                    <!-- Query Result Table -->
+                    <div class="results-container">
+                        <div class="results-header">
+                            <span class="results-title">RESULTADO DA CONSULTA (<span id="row-count">0</span> TUPLAS)</span>
+                            <span id="execution-time" class="exec-timer">0.00 ms</span>
+                        </div>
+                        <div id="results-table-wrapper" class="table-wrapper">
+                            <div class="empty-state">Nenhuma consulta executada ainda. Digite seu SQL e clique em Executar.</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Modal final -->
+        <div id="certificate-modal" class="modal-backdrop" style="display: none;">
+            <div class="modal-card">
+                <div class="modal-header">
+                    <img class="final-logo kora-logo" alt="Kora EduTech" src="">
+                    <span class="cyber-badge-gold">★ MISSÃO CUMPRIDA</span>
+                    <h2>INTEGRIDADE TOTAL RESTABELECIDA</h2>
+                    <p>Você concluiu <span id="modal-total-levels">todas as fases</span> das 3 trilhas da Operação QueryZero com a Dra. Maya Vance.</p>
+                </div>
+                <div class="modal-body">
+                    <p class="modal-desc">O cluster da Aethelgard Dynamics, em Florianópolis, está estabilizado. Agora feche com chave de ouro: conclua seus projetos, faça a conversa de promoção com a Maya e emita seu certificado.</p>
+                    <div class="final-actions">
+                        <button class="btn btn-primary btn-large" onclick="closeModal(); Projects.open();">📁 PROJETOS DE PORTFÓLIO</button>
+                        <button class="btn btn-gold btn-large" onclick="closeModal(); Interview.open();">💼 ENTREVISTA DE PROMOÇÃO</button>
+                        <button class="btn btn-secondary btn-large" onclick="closeModal(); KoraCert.open();">🎓 CERTIFICADO</button>
+                    </div>
+                    <p class="related">Continue aprendendo na Kora EduTech: <b>Missão Commit</b> (Git e GitHub) e <b>Método das Folhas</b> (matemática do zero ao avançado).</p>
+                </div>
+                <div class="modal-footer modal-footer-wrap">
+                    <button class="btn btn-secondary" onclick="closeModal()">REVISAR CONSULTAS</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Treasure Collection Modal -->
+        <div id="treasure-modal" class="modal-backdrop" style="display: none;">
+            <div class="modal-card modal-wide">
+                <div class="modal-header">
+                    <span class="cyber-badge-gold">💎 COFRE DE TESOUROS</span>
+                    <h2>TESOUROS ESCONDIDOS</h2>
+                    <p id="treasure-summary">0 de 12 tesouros encontrados</p>
+                </div>
+                <div class="modal-body">
+                    <div id="treasure-grid" class="treasure-grid"></div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="Treasures.closeCollection()">FECHAR</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Scenes Modal -->
+        <div id="scenes-modal" class="modal-backdrop" style="display: none;">
+            <div class="modal-card modal-wide">
+                <div class="modal-header">
+                    <span class="cyber-badge-gold">🎬 CENAS</span>
+                    <h2>HISTÓRIA DA OPERAÇÃO</h2>
+                    <p>Reveja as cenas já desbloqueadas</p>
+                </div>
+                <div class="modal-body">
+                    <div id="scenes-list" class="scenes-list"></div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closeScenes()">FECHAR</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Portfolio Modal -->
+        <div id="portfolio-modal" class="modal-backdrop" style="display: none;">
+            <div class="modal-card modal-wide">
+                <div class="modal-header">
+                    <span class="cyber-badge-gold">📁 PORTFÓLIO</span>
+                    <h2>SEU PORTFÓLIO PARA O GITHUB</h2>
+                    <p>README, soluções em SQL e uma página pronta para publicar</p>
+                </div>
+                <div class="modal-body" id="portfolio-body"></div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="Portfolio.close()">FECHAR</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tela inicial -->
+    <div id="start-screen" class="start-screen" hidden>
+        <div class="start-bg" id="start-bg"></div>
+        <div class="start-shade"></div>
+        <div class="start-content">
+            <img class="start-logo kora-logo" alt="Kora EduTech" src="">
+            <div class="start-kicker">[ CLASSIFIED // AETHELGARD DYNAMICS // SEDE FLORIANÓPOLIS (SC) ]</div>
+            <h1 class="start-title" data-text="OPERAÇÃO QUERYZERO">OPERAÇÃO QUERYZERO</h1>
+            <p class="start-sub">Um thriller forense em SQL: 90 fases, 12 tesouros escondidos e um culpado com rosto.</p>
+            <div class="start-cast" id="start-cast"></div>
+            <div class="start-actions">
+                <button id="btn-start-new" class="btn btn-primary btn-large" onclick="startNewGame()" disabled>▶ INICIAR MISSÃO</button>
+                <button id="btn-start-continue" class="btn btn-primary btn-large" onclick="continueGame()" hidden disabled>▶ CONTINUAR</button>
+            </div>
+            <div class="start-menu" id="start-menu" hidden>
+                <button type="button" class="btn btn-secondary" onclick="Projects.open()">📁 Projetos</button>
+                <button type="button" class="btn btn-secondary" onclick="Achievements.open()">🏅 Conquistas</button>
+                <button type="button" class="btn btn-secondary" onclick="KoraCert.open()">🎓 Certificado</button>
+                <button type="button" class="btn btn-secondary" onclick="Interview.open()">💼 Entrevista</button>
+                <button type="button" class="btn btn-secondary" onclick="Challenge.open()">🤝 Desafiar amigo</button>
+            </div>
+            <div class="start-options">
+                <button type="button" class="btn btn-secondary" id="start-sound" onclick="toggleSound()">🔊 Música e efeitos: ligados</button>
+                <button type="button" class="btn btn-secondary" id="start-voice" onclick="toggleVoice()">🗣 Voz dos personagens: desligada</button>            </div>
+            <div class="start-status" id="start-status">Carregando o motor SQL…</div>
+            <button type="button" class="btn-subtle" id="btn-start-reset" onclick="resetProgress()" hidden>Apagar progresso e recomeçar</button>
+        </div>
+    </div>
+
+    <!-- Avisos e tesouros -->
+    <div id="treasure-popup" class="treasure-popup" role="status" aria-live="polite"></div>
+    <div id="toast-host" class="toast-host" aria-live="polite"></div>
+
+    <!-- Scripts da Aplicação -->
+    <script src="js/save.js"></script>
+    <script src="js/audio.js"></script>
+    <script src="js/art.js"></script>
+    <script src="js/story.js"></script>
+    <script src="js/levels.js"></script>
+    <script src="js/engine.js"></script>
+    <script src="js/validator.js"></script>
+    <script src="js/cutscene.js"></script>
+    <script src="js/treasures.js"></script>
+    <script src="js/portfolio.js"></script>
+    <script src="js/projetos.js"></script>
+    <script src="js/logo.js"></script>
+    <script src="js/kora.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

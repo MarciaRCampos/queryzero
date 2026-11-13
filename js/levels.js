@@ -233,7 +233,7 @@ const LEVELS = [
     certModule: "Filtros Numéricos & Comparação",
     title: "Nível 06: Pontos de Acesso Comprometidos",
     briefing: "O sistema de controle de acesso físico registrou dezenas de tentativas de entrada falhas na noite do incidente. Maya quer isolar apenas os funcionários com um número alto de falhas para identificar possíveis tentativas de invasão física.",
-    objective: "Projete apenas as colunas 'funcionario' e 'tentativas_falhas' da tabela 'controle_acesso_fisico'. Filtre somente os registros em que 'tentativas_falhas' seja maior que 3. Ordene o resultado por 'tentativas_falhas' em ordem decrescente.",
+    objective: "Projete apenas as colunas 'funcionario' e 'tentativas_falhas' da tabela 'controle_acesso_fisico'. Filtre somente os registros em que 'tentativas_falhas' seja maior que 3. Ordene o resultado por 'tentativas_falhas' em ordem decrescente. Em caso de empate, ordene por 'acesso_id' crescente.",
     theory: {
         title: "Operadores de Comparação Numérica",
         explanation: "Além da igualdade (=), o WHERE aceita operadores de comparação numérica: '>', '<', '>=', '<=' e '<>' (ou '!=') para diferença. Eles funcionam com números, datas e até texto. Quando você quer ver primeiro os valores mais altos, use ORDER BY coluna DESC; para ver os menores primeiro, use ASC.",
@@ -396,7 +396,7 @@ const LEVELS = [
     certModule: "Filtros Numéricos & Comparação",
     title: "Nível 10: Transações Fora do Padrão",
     briefing: "O sistema antifraude classifica cada transação com um nível de risco de 1 a 5. Maya quer descartar apenas as transações de risco mínimo e focar em tudo que fugiu do padrão de normalidade.",
-    objective: "Projete apenas as colunas 'conta_origem' e 'nivel_risco' da tabela 'transacoes_suspeitas'. Filtre somente os registros em que 'nivel_risco' seja diferente de 1. Ordene o resultado por 'nivel_risco' em ordem decrescente.",
+    objective: "Projete apenas as colunas 'conta_origem' e 'nivel_risco' da tabela 'transacoes_suspeitas'. Filtre somente os registros em que 'nivel_risco' seja diferente de 1. Ordene o resultado por 'nivel_risco' em ordem decrescente. Em caso de empate, ordene por 'transacao_id' crescente.",
     theory: {
         title: "Operadores de Comparação Numérica",
         explanation: "Além da igualdade (=), o WHERE aceita operadores de comparação numérica: '>', '<', '>=', '<=' e '<>' (ou '!=') para diferença. Eles funcionam com números, datas e até texto. Quando você quer ver primeiro os valores mais altos, use ORDER BY coluna DESC; para ver os menores primeiro, use ASC.",
@@ -640,7 +640,7 @@ const LEVELS = [
     certModule: "IN — Conjuntos de Valores",
     title: "Nível 16: Portas de Rede Sob Vigilância",
     briefing: "A equipe de segurança de rede mantém uma lista de portas classicamente associadas a ataques de acesso remoto: 22, 445 e 3389. Maya quer todas as conexões registradas que usaram exatamente essas portas de destino.",
-    objective: "Projete apenas as colunas 'ip_origem' e 'porta_destino' da tabela 'conexoes_rede'. Filtre somente os registros em que 'porta_destino' esteja entre os valores 22, 445 ou 3389 (utilize IN (22, 445, 3389)). Ordene o resultado por 'porta_destino' em ordem crescente.",
+    objective: "Projete apenas as colunas 'ip_origem' e 'porta_destino' da tabela 'conexoes_rede'. Filtre somente os registros em que 'porta_destino' esteja entre os valores 22, 445 ou 3389 (utilize IN (22, 445, 3389)). Ordene o resultado por 'porta_destino' em ordem crescente. Em caso de empate, ordene por 'conexao_id' crescente.",
     theory: {
         title: "O Operador IN",
         explanation: "O operador IN permite testar se o valor de uma coluna está presente em uma lista de valores, evitando escrever vários 'OR' encadeados. 'coluna IN (valor1, valor2, valor3)' equivale a 'coluna = valor1 OR coluna = valor2 OR coluna = valor3', mas é mais legível e mais rápido de escrever.",

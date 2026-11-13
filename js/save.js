@@ -3,7 +3,8 @@
  * (persistência local, avisos na tela e entrega de arquivos ao jogador)
  */
 
-const SAVE_KEY = "queryzero_save_v2";
+const SAVE_KEY = "mg_queryzero_v1";
+const LEGACY_SAVE_KEY = "queryzero_save_v2";
 
 const Save = (() => {
     const fresh = () => ({
@@ -12,6 +13,15 @@ const Save = (() => {
         treasures: [],            // ids de tesouros encontrados
         scenes: [],               // ids de cenas já assistidas
         settings: { music: true, sfx: true, voice: false },
+        points: 0,                // pontuação total (enviada ao ranking do site)
+        combo: 0,                 // acertos seguidos de primeira
+        bestCombo: 0,
+        streak: { last: null, count: 0, best: 0 },
+        chapterMedals: [],        // capítulos (grupos de 5 fases) concluídos
+        quick: [],                // capítulos liberados pela prova rápida
+        projects: { active: null, solutions: {}, repos: {}, done: [] },
+        interview: null,          // { score, total, date }
+        relampago: false,
         startedAt: null,
         updatedAt: null
     });
@@ -20,11 +30,14 @@ const Save = (() => {
 
     function load() {
         try {
-            const raw = window.localStorage.getItem(SAVE_KEY);
+            let raw = window.localStorage.getItem(SAVE_KEY);
+            if (!raw) raw = window.localStorage.getItem(LEGACY_SAVE_KEY);
             if (raw) {
                 const parsed = JSON.parse(raw);
                 const base = fresh();
-                data = { ...base, ...parsed, settings: { ...base.settings, ...(parsed.settings || {}) } };
+                data = { ...base, ...parsed, settings: { ...base.settings, ...(parsed.settings || {}) },
+                         streak: { ...base.streak, ...(parsed.streak || {}) },
+                         projects: { ...base.projects, ...(parsed.projects || {}) } };
             }
         } catch (e) {
             data = fresh();
@@ -79,6 +92,7 @@ const Platform = {
     toast(message, kind = "info", ms = 4200) {
         const host = document.getElementById("toast-host");
         if (!host) return;
+        while (host.children.length >= 2) host.firstElementChild.remove();
         const el = document.createElement("div");
         el.className = `toast toast-${kind}`;
         el.textContent = message;

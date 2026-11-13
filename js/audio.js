@@ -453,6 +453,10 @@ const GameAudio = (() => {
     let voiceClip = null;
 
     async function loadVoiceFiles() {
+        if (window.VOICE_DATA) {
+            voiceKeys = new Set(Object.keys(window.VOICE_DATA));
+            return voiceKeys.size;
+        }
         try {
             const res = await fetch("audio/vozes/manifest.json", { cache: "no-store" });
             if (!res.ok) return 0;
@@ -491,7 +495,7 @@ const GameAudio = (() => {
         if (voiceKeys.has(key)) {
             const fallback = () => { stopVoiceClip(); if (charId) speak(text, profile, charId); };
             try {
-                const clip = new Audio(`audio/vozes/${key}.wav`);
+                const clip = new Audio(window.VOICE_DATA && window.VOICE_DATA[key] ? window.VOICE_DATA[key] : `audio/vozes/${key}.mp3`);
                 voiceClip = clip;
                 duck(true);
                 clip.onended = () => { if (voiceClip === clip) { voiceClip = null; duck(false); } };

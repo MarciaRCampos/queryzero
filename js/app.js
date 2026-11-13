@@ -2,7 +2,8 @@
  * Operação QueryZero - Controlador Principal da Aplicação
  */
 
-const PLAYER_NAME_STORAGE_KEY = "queryzero_player_name";
+const PLAYER_NAME_STORAGE_KEY = "mg_queryzero_v1_nome";
+const LEGACY_NAME_KEY = "queryzero_player_name";
 
 let currentLevelIndex = 0;
 let completedLevels = new Set();
@@ -19,6 +20,10 @@ window.getGameMood = () => {
 window.addEventListener("DOMContentLoaded", async () => {
     const statusElem = document.getElementById("engine-status");
     Save.load();
+    KoraUI.mount();
+    Nav.init();
+    Score.hud();
+    if (Save.get().relampago) { const rb = document.getElementById("btn-relampago"); if (rb) rb.classList.add("active"); }
     const s = Save.get().settings;
     GameAudio.setMusic(s.music);
     GameAudio.setSfx(s.sfx);
@@ -51,6 +56,7 @@ window.addEventListener("DOMContentLoaded", async () => {
         renderProgressSteps();
         setupKeyboardShortcuts();
         setStartReady(true);
+        Site.post("pronto", { pontos: Save.get().points, fases: Save.get().completed.length });
     } catch (err) {
         statusElem.innerText = "ERRO WASM";
         statusElem.style.color = "#f43f5e";
@@ -88,10 +94,15 @@ function setStartReady(ready) {
     const resetBtn = document.getElementById("btn-start-reset");
     newBtn.disabled = !ready;
     contBtn.disabled = !ready;
-    newBtn.hidden = hasProgress;
-    contBtn.hidden = !hasProgress;
-    resetBtn.hidden = !hasProgress;
-    if (hasProgress) {
+    newBtn.hidden = hasProgress || gameStarted;
+    contBtn.hidden = !(hasProgress || gameStarted);
+    resetBtn.hidden = !hasProgress || gameStarted;
+    const menu = document.getElementById("start-menu");
+    if (menu) menu.hidden = !(hasProgress || gameStarted) || !ready;
+    if (gameStarted) {
+        contBtn.textContent = `▶ VOLTAR AO JOGO — FASE ${currentLevelIndex + 1}`;
+        st.textContent = `${completedLevels.size} fases concluídas · ⭐ ${Save.get().points} pontos · ${Save.get().treasures.length}/${TREASURES.length} tesouros`;
+    } else if (hasProgress) {
         contBtn.textContent = `▶ CONTINUAR — FASE ${firstIncompleteIndex() + 1} DE ${LEVELS.length}`;
         st.textContent = `${completedLevels.size} fases concluídas · ${Save.get().treasures.length}/${TREASURES.length} tesouros`;
     } else {
@@ -115,9 +126,35 @@ async function startNewGame() {
 function continueGame() {
     GameAudio.init();
     hideStartScreen();
+    if (gameStarted) { focusEditor(); return; }
     gameStarted = true;
-    loadLevel(firstIncompleteIndex(), { silent: true });
+    let idx = firstIncompleteIndex();
+    if (isLevelPaywalled(idx)) {
+        loadLevel(Math.max(0, idx - 1), { silent: true });
+        Paywall.open();
+        return;
+    }
+    loadLevel(idx, { silent: true });
     Platform.toast("Progresso restaurado. Boa investigação!", "ok");
+}
+
+/* Cadeados e paywall */
+function isLevelUnlocked(idx) {
+    return idx === 0 || completedLevels.has(idx) || completedLevels.has(idx - 1);
+}
+function isLevelPaywalled(idx) {
+    return !!LEVELS[idx] && LEVELS[idx].tier === "avancado" && !Site.hasFullAccess();
+}
+function tryOpenLevel(idx) {
+    if (!gameStarted || idx < 0 || idx >= LEVELS.length) return;
+    if (isLevelPaywalled(idx)) { Paywall.open(); return; }
+    if (!isLevelUnlocked(idx)) {
+        GameAudio.sfx("error");
+        const ch = Math.floor(idx / 5);
+        Platform.toast(`🔒 Fase ${idx + 1} bloqueada. Conclua a fase ${idx} ou faça a prova rápida no início do capítulo (fase ${ch * 5 + 1}).`, "info", 5000);
+        return;
+    }
+    loadLevel(idx);
 }
 
 function resetProgress() {
@@ -132,6 +169,7 @@ function resetProgress() {
         return;
     }
     Save.reset();
+    Score.hud();
     completedLevels = new Set();
     completedTiers = new Set();
     Treasures.updateHud();
@@ -152,7 +190,8 @@ function restoreProgress() {
 
 function focusEditor() {
     const el = document.getElementById("sql-input");
-    if (el && !Cutscene.isActive()) el.focus();
+    const isPhone = window.matchMedia && window.matchMedia("(max-width: 900px)").matches;
+    if (el && !Cutscene.isActive() && !isPhone) el.focus();
 }
 
 async function playScene(id, opts = {}) {
@@ -237,8 +276,10 @@ function replayScene(id) {
 function setupPlayerNameField() {
     const field = document.getElementById("player-name-field");
     let stored = null;
-    try { stored = localStorage.getItem(PLAYER_NAME_STORAGE_KEY); } catch (e) { /* sem armazenamento */ }
-    if (stored) field.value = stored;
+    try { stored = localStorage.getItem(PLAYER_NAME_STORAGE_KEY) || localStorage.getItem(LEGACY_NAME_KEY); } catch (e) { /* sem armazenamento */ }
+    const fromSite = Site.loginName();
+    if (fromSite) { field.value = fromSite; field.readOnly = true; field.title = "Nome do seu login no site"; }
+    else if (stored) field.value = stored;
 
     field.addEventListener("input", () => {
         try { localStorage.setItem(PLAYER_NAME_STORAGE_KEY, field.value.trim()); } catch (e) { /* sem armazenamento */ }
@@ -247,7 +288,7 @@ function setupPlayerNameField() {
 
 function getPlayerName() {
     const field = document.getElementById("player-name-field");
-    return field ? field.value.trim() : "";
+    return (field ? field.value.trim() : "") || Site.loginName();
 }
 
 function ensurePlayerName() {
@@ -296,14 +337,20 @@ function renderProgressSteps() {
         const label = document.createElement("div");
         label.className = "tier-group-label";
         label.innerHTML = `<span>${TIER_LABELS[tierKey]}</span><span class="tier-group-count">${completedInTier}/${tierIndexes.length}</span>`;
-        if (isTierFullyCompleted(tierKey)) {
+        if (isTierFullyCompleted(tierKey) && tierKey !== "avancado") {
             const certBtn = document.createElement("button");
             certBtn.type = "button";
             certBtn.className = "btn btn-gold tier-cert-btn";
-            certBtn.textContent = "🎖 Certificado";
-            certBtn.title = `Baixar o certificado da trilha ${TIER_LABELS[tierKey]}`;
-            certBtn.onclick = () => handleDownloadTierCertificate(tierKey);
+            certBtn.textContent = "🎓 Certificado";
+            certBtn.title = "Abrir seus certificados";
+            certBtn.onclick = () => KoraCert.open();
             label.appendChild(certBtn);
+        }
+        if (tierKey === "avancado" && !Site.hasFullAccess()) {
+            const tag = document.createElement("span");
+            tag.className = "tier-paid-tag";
+            tag.textContent = "🔐 curso completo";
+            label.appendChild(tag);
         }
         group.appendChild(label);
 
@@ -312,20 +359,29 @@ function renderProgressSteps() {
 
         LEVELS.forEach((lvl, idx) => {
             if (lvl.tier !== tierKey) return;
-            const chip = document.createElement("div");
-            chip.className = `step-chip ${idx === currentLevelIndex ? 'active' : ''} ${completedLevels.has(idx) ? 'completed' : ''}`;
-            chip.title = `Fase ${idx + 1}: ${lvl.title}`;
-            chip.onclick = () => { if (gameStarted) loadLevel(idx); };
-            chip.innerText = completedLevels.has(idx) ? '✓' : (idx + 1);
+            const chip = document.createElement("button");
+            chip.type = "button";
+            const paid = isLevelPaywalled(idx);
+            const locked = !paid && !isLevelUnlocked(idx);
+            chip.className = `step-chip ${idx === currentLevelIndex ? 'active' : ''} ${completedLevels.has(idx) ? 'completed' : ''} ${locked ? 'locked' : ''} ${paid ? 'paid' : ''}`;
+            chip.title = `Fase ${idx + 1}: ${lvl.title}${locked ? " (bloqueada)" : paid ? " (curso completo)" : ""}`;
+            chip.onclick = () => tryOpenLevel(idx);
+            chip.innerText = completedLevels.has(idx) ? '✓' : (locked || paid) ? '🔒' : (idx + 1);
             chipsRow.appendChild(chip);
         });
 
         group.appendChild(chipsRow);
         container.appendChild(group);
     });
+    const active = container.querySelector(".step-chip.active");
+    if (active && active.scrollIntoView) {
+        const row = active.parentElement;
+        row.scrollLeft = Math.max(0, active.offsetLeft - row.offsetLeft - row.clientWidth / 2);
+    }
 }
 
 function loadLevel(index, opts = {}) {
+    QuickTest.clearIfLeaving(opts);
     currentLevelIndex = index;
     const level = LEVELS[index];
 
@@ -362,19 +418,20 @@ function loadLevel(index, opts = {}) {
     hideFeedback();
     clearResultsTable();
 
-    if (completedLevels.has(index)) {
+    if (completedLevels.has(index) && !opts.quick) {
         lastPassedLevelIndex = index;
         showFeedback({
             isSuccess: true,
             title: "FASE JÁ CONCLUÍDA",
-            msg: "Você já resolveu esta fase. Baixe o certificado ou refaça a consulta à vontade.",
+            msg: Save.solutionFor(level.id) ? "Você já resolveu esta fase (🏅 medalha garantida). Refaça a consulta à vontade." : "Fase liberada pela prova rápida. Se quiser praticar, resolva mesmo assim.",
             showNextBtn: index + 1 < LEVELS.length,
-            showLevelCertBtn: true,
-            showTierCertBtn: isTierFullyCompleted(level.tier)
+            showTierCertBtn: isTierFullyCompleted(level.tier) && level.tier !== "avancado"
         });
     }
 
     renderProgressSteps();
+    QuickTest.offerFor(index);
+    Score.onLevelLoaded();
 
     if (gameStarted && !Cutscene.isActive()) {
         GameAudio.setMood(getGameMood());
@@ -483,11 +540,13 @@ function handleRunQuery() {
     Treasures.checkVaultAttempt(level, input, evaluation.userResult);
 
     if (evaluation.passed) {
+        const quickPassed = QuickTest.onPass(level);
         const firstTime = !completedLevels.has(currentLevelIndex);
         completedLevels.add(currentLevelIndex);
         lastPassedLevelIndex = currentLevelIndex;
         Save.markCompleted(level.id, input.trim());
         GameAudio.sfx("success");
+        if (firstTime) Score.onPass(level, currentLevelIndex, { quick: quickPassed }); else Score.onRepeatPass();
         renderProgressSteps();
 
         const tierKey = level.tier;
@@ -501,9 +560,12 @@ function handleRunQuery() {
             title: "INTEGRIDADE CONFIRMADA",
             msg: evaluation.message,
             showNextBtn: !isLastLevel,
-            showLevelCertBtn: true,
-            showTierCertBtn: tierJustCompleted
+            showTierCertBtn: tierJustCompleted && tierKey !== "avancado"
         });
+        if (tierJustCompleted) {
+            FX.confetti(true);
+            setTimeout(() => Platform.toast(`🎓 Trilha ${TIER_LABELS[tierKey]} concluída!${tierKey !== "avancado" ? " Seu certificado já está liberado." : ""} Novas entregas dos projetos também.`, "ok", 6000), 900);
+        }
 
         const finishedAll = firstTime && completedLevels.size === LEVELS.length;
         const queue = [];
@@ -520,6 +582,7 @@ function handleRunQuery() {
         }
     } else {
         GameAudio.sfx("error");
+        Score.onMiss();
         showFeedback({
             isSuccess: false,
             title: "FALHA DE VALIDAÇÃO",
@@ -536,7 +599,7 @@ function handleResetDatabase() {
 
 function handleNextLevel() {
     if (currentLevelIndex + 1 < LEVELS.length) {
-        loadLevel(currentLevelIndex + 1);
+        tryOpenLevel(currentLevelIndex + 1);
     } else {
         openCertificateModal();
     }
@@ -556,11 +619,10 @@ function showFeedback({ isSuccess, title, msg, showNextBtn = false, showLevelCer
     titleEl.innerText = title;
     msgEl.innerText = msg;
     nextBtn.style.display = showNextBtn ? 'inline-flex' : 'none';
-    levelCertBtn.style.display = showLevelCertBtn ? 'inline-flex' : 'none';
+    if (levelCertBtn) levelCertBtn.style.display = 'none';
 
     if (showTierCertBtn) {
-        const tierLabel = TIER_LABELS[LEVELS[currentLevelIndex].tier];
-        tierCertBtn.innerText = `🎖 CERTIFICADO DA TRILHA ${tierLabel}`;
+        tierCertBtn.innerText = "🎓 CERTIFICADO";
         tierCertBtn.style.display = 'inline-flex';
     } else {
         tierCertBtn.style.display = 'none';
@@ -623,8 +685,6 @@ function setupKeyboardShortcuts() {
 function openCertificateModal() {
     document.getElementById("certificate-modal").style.display = "flex";
     document.getElementById("modal-total-levels").innerText = `as ${LEVELS.length} fases`;
-    const name = getPlayerName();
-    if (name) document.getElementById("player-name-input").value = name;
 }
 
 function closeModal() {
@@ -633,57 +693,11 @@ function closeModal() {
 
 function openPortfolioFromModal() {
     closeModal();
-    Portfolio.open();
+    Projects.open();
 }
 
-async function handleDownloadLevelCertificate() {
-    const name = ensurePlayerName();
-    if (!name) return;
-    if (lastPassedLevelIndex === null) return;
-
-    const btn = document.getElementById("btn-cert-level");
-    btn.disabled = true;
-    btn.innerText = "GERANDO...";
-    try {
-        await window.generateLevelCertificate(name, LEVELS[lastPassedLevelIndex]);
-    } finally {
-        btn.disabled = false;
-        btn.innerText = "🏅 CERTIFICADO DO NÍVEL";
-    }
-}
-
-async function handleDownloadTierCertificate(tierKey = LEVELS[currentLevelIndex].tier) {
-    const name = ensurePlayerName();
-    if (!name) return;
-    if (!isTierFullyCompleted(tierKey)) return;
-
-    const tierLevels = getTierLevels(tierKey);
-
-    const btn = document.getElementById("btn-cert-tier");
-    const originalLabel = btn.innerText;
-    btn.disabled = true;
-    btn.innerText = "GERANDO...";
-    try {
-        await window.generateTierCertificate(name, tierKey, tierLevels);
-    } finally {
-        btn.disabled = false;
-        btn.innerText = originalLabel;
-    }
-}
-
-async function handleGenerateCertificate() {
-    const nameInput = document.getElementById("player-name-input");
-    const name = nameInput.value.trim();
-    if (!name) {
-        Platform.toast("Digite seu nome completo para assinar o certificado.", "error", 5000);
-        nameInput.focus();
-        return;
-    }
-    try { localStorage.setItem(PLAYER_NAME_STORAGE_KEY, name); } catch (e) { /* sem armazenamento */ }
-    const field = document.getElementById("player-name-field");
-    if (field) field.value = name;
-
-    await window.generateMasterCertificate(name, Array.from(completedLevels));
+function handleDownloadTierCertificate() {
+    KoraCert.open();
 }
 
 function escapeHtml(str) {

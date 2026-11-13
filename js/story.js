@@ -21,7 +21,7 @@ const STORY = {
             trigger: { type: "start" },
             shots: [
                 {
-                    bg: "city_night", fx: ["rain"], chars: [],
+                    bg: "city_night", fx: ["rain"], chars: [], place: "📍 Florianópolis (SC) · sede da Aethelgard Dynamics",
                     lines: [
                         { who: null, text: "02h14 da madrugada. Aethelgard Dynamics, a maior empresa de dados da América Latina." },
                         { who: null, text: "Em onze minutos, todos os bancos de dados da companhia foram corrompidos.", sfx: "glitch" },
