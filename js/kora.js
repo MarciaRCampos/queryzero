@@ -994,137 +994,122 @@ const KoraCert = (() => {
         return kind === "bronze" ? ["#e3a46b", "#a0592b", "#6e3a17"] : kind === "prata" ? ["#f1f3f6", "#a9b1bd", "#5f6773"] : ["#ffe28a", "#d4a017", "#8a6508"];
     }
 
+    // Mesmo modelo HTML/CSS da prévia aprovada (claude/certificado-padrao.md), convertido em imagem.
+    const CERT_CSS = `
+      .kc{--grafite:#23262b;--ouro:#c9993f;--ouro2:#a8782c;--ciano:#29a9d6;--muted:#6b6458;
+        position:relative;width:1080px;height:1350px;overflow:hidden;padding:64px 90px;box-sizing:border-box;
+        display:flex;flex-direction:column;align-items:center;text-align:center;font-family:'Nunito Sans',sans-serif;color:var(--grafite)}
+      .kc *{box-sizing:border-box}
+      .kc .frame{position:absolute;inset:34px;border:3px solid var(--ouro);border-radius:6px}
+      .kc .frame2{position:absolute;inset:46px;border:1px solid rgba(201,153,63,.6);border-radius:3px}
+      .kc .circ{position:absolute;opacity:.55}
+      .kc .logo{width:540px;margin-top:30px}
+      .kc .kicker{font:600 20px 'JetBrains Mono',monospace;letter-spacing:.35em;color:var(--ouro2);margin-top:30px}
+      .kc .certifica{font-size:26px;color:var(--muted);margin-top:32px}
+      .kc .nome{font:700 64px 'Fraunces',serif;margin:10px 0 0;border-bottom:2px solid var(--ouro);padding:0 30px 10px;white-space:nowrap}
+      .kc .curso{font-size:28px;margin-top:24px;line-height:1.45;max-width:900px}
+      .kc .curso b{font-family:'Fraunces',serif;font-size:34px;white-space:nowrap}
+      .kc .meta{display:flex;gap:16px;justify-content:center;margin-top:28px;flex-wrap:wrap}
+      .kc .chip{font:600 20px 'JetBrains Mono',monospace;border:1.5px solid var(--ouro);color:var(--grafite);padding:8px 18px;border-radius:999px}
+      .kc .bloco{width:100%;max-width:860px;text-align:left;margin-top:26px}
+      .kc .bloco h3{font:600 19px 'JetBrains Mono',monospace;color:var(--ciano);margin:0 0 10px;letter-spacing:.08em}
+      .kc .comp{display:flex;flex-wrap:wrap;gap:10px}
+      .kc .comp span{font-size:20px;background:rgba(201,153,63,.14);padding:6px 14px;border-radius:8px}
+      .kc .proj{font-size:20px;margin:5px 0;line-height:1.35}
+      .kc .proj code{font:400 18px 'JetBrains Mono',monospace;color:var(--ciano)}
+      .kc .rodape{position:relative;width:100%;margin-top:auto;padding-top:48px;margin-bottom:40px;display:flex;justify-content:space-between;align-items:flex-end}
+      .kc .ass{text-align:center;width:430px}
+      .kc .ass .sig{white-space:nowrap;font:400 52px 'Great Vibes',cursive;color:var(--grafite);line-height:1.15;padding-bottom:6px}
+      .kc .ass .linha{border-top:1.5px solid var(--grafite);margin-top:6px;padding-top:12px;font-size:21px;line-height:1.5}
+      .kc .ass .linha small{display:block;color:var(--muted);font-size:18px;margin-top:2px}
+      .kc .verif{display:flex;gap:14px;align-items:flex-end;text-align:right}
+      .kc .verif .txt{font:400 16px 'JetBrains Mono',monospace;color:var(--muted);line-height:1.5}
+      .kc .verif .txt b{color:var(--grafite);font-weight:600}
+      .kc .qr{width:130px;height:130px;background:#fff;padding:8px;border-radius:6px}
+      .kc .qr img{width:100%;height:100%;display:block;image-rendering:pixelated}
+      .kc .livre{position:absolute;bottom:44px;left:0;right:0;font-size:15px;color:var(--muted)}
+      .kc .selo-ring{position:absolute;top:109px;right:66px;width:172px;height:172px;border-radius:50%;background:rgba(201,153,63,.35)}
+      .kc .selo{position:absolute;top:6px;left:6px;width:160px;height:160px;border-radius:50%;color:#2b2010;display:flex;flex-direction:column;align-items:center;justify-content:center;font:700 18px 'JetBrains Mono',monospace;line-height:1.2;text-align:center;transform:rotate(-12deg)}
+      .kc .selo small{font-size:14px;font-weight:600;margin-top:4px}`;
+    const SEALS = {
+        basico: { html: "BÁSICO", bg: "radial-gradient(circle at 35% 30%,#e9b892,#b87333 60%,#8a5524)" },
+        intermediario: { html: "INTERMEDIÁRIO", bg: "radial-gradient(circle at 35% 30%,#f4f4f4,#b8bcc2 60%,#868b92)", small: true },
+        avancado: { html: "AVANÇADO", bg: "radial-gradient(circle at 35% 30%,#f3d58a,#c9993f 60%,#a8782c)" },
+        portfolio: { html: "PORTFÓLIO<br>COMPLETO<br><small>3 projetos</small>", bg: "radial-gradient(circle at 35% 30%,#f3d58a,#c9993f 60%,#a8782c)" }
+    };
+    const CIRC = `<path d="M10 10 H90 L120 40 H200" stroke="#c9993f"/><circle cx="200" cy="40" r="5" fill="#c9993f"/><path d="M10 30 H60 L100 70 H170" stroke="#29a9d6"/><circle cx="170" cy="70" r="5" fill="#29a9d6"/>`;
+
+    const CIRC_R = `<path d="M210 10 H130 L100 40 H20" stroke="#c9993f"/><circle cx="20" cy="40" r="5" fill="#c9993f"/><path d="M210 30 H160 L120 70 H50" stroke="#29a9d6"/><circle cx="50" cy="70" r="5" fill="#29a9d6"/>`;
+
+    const svgUri = inner => "data:image/svg+xml;charset=utf-8," + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="220" height="160" viewBox="0 0 220 160" fill="none" stroke-width="2">${inner}</svg>`);
+
+    function qrDataUrl(text) {
+        if (!text || typeof qrcode === "undefined") return "";
+        try { const q = qrcode(0, "M"); q.addData(text); q.make(); return q.createDataURL(8, 0); } catch (e) { return ""; }
+    }
+
+    function certHtml(name, c, url) {
+        const info = LEVELS_INFO[chosen], seal = SEALS[chosen];
+        const bg = chosen === "portfolio" ? "linear-gradient(160deg,#f6ecd6 0%,#efe0c2 55%,#e8d6b2 100%)" : "#fbf6ee";
+        const projs = projectLines(chosen);
+        const where = (Site.verifyBase() || "site da Kora EduTech").replace(/^https?:\/\//, "");
+        const qr = qrDataUrl(url);
+        return `<div class="kc" style="background:${bg}">
+            <div class="frame"></div><div class="frame2"></div>
+            <img class="circ" style="left:40px;top:40px" width="220" height="160" alt="" src="${svgUri(CIRC)}">
+            <img class="circ" style="left:820px;top:40px" width="220" height="160" alt="" src="${svgUri(CIRC_R)}">
+            <img class="logo" alt="Kora EduTech" src="${KORA_LOGO}">
+            <div class="kicker">CERTIFICADO DE CONCLUSÃO</div>
+            <div class="certifica">Certificamos que</div>
+            <div class="nome">${kesc(name)}</div>
+            <div class="curso">concluiu o curso<br><b>${kesc(KORA.course)}</b></div>
+            <div class="meta"><span class="chip">carga horária: ${info.hours()} h</span><span class="chip">concluído em ${new Date().toLocaleDateString("pt-BR")}</span></div>
+            <div class="bloco"><h3>// competências</h3><div class="comp">${info.skills().slice(0, 5).map(s => `<span>${kesc(s)}</span>`).join("")}</div></div>
+            ${projs.length ? `<div class="bloco"><h3>// projetos de portfólio</h3>${projs.map((p, i) => `<div class="proj">${i + 1}. ${kesc(p.name)}${p.url ? ` — <code>${kesc(p.url.replace(/^https?:\/\//, ""))}</code>` : ""}</div>`).join("")}</div>` : ""}
+            <div class="rodape">
+                <div class="ass"><div class="sig">Márcia R. Campos</div><div class="linha">Márcia Rodrigues Campos<small>Founder · Kora EduTech</small></div></div>
+                <div class="verif"><div class="txt">verifique em<br><b>${kesc(where)}</b><br>código <b>${kesc(c)}</b></div>${qr ? `<div class="qr"><img alt="QR" src="${qr}"></div>` : ""}</div>
+            </div>
+            <div class="livre">Curso livre de formação prática.</div>
+            <div class="selo-ring"><div class="selo" style="background:${seal.bg};${seal.small ? "font-size:14px" : ""}">${seal.html}</div></div>
+        </div>`;
+    }
+
     let drawing = 0;
     async function draw() {
         const my = ++drawing;
         const cv = document.getElementById("cert-canvas");
         if (!cv || !chosen) return;
-        const ctx = cv.getContext("2d");
-        const info = LEVELS_INFO[chosen];
         const name = currentName() || "Seu nome aqui";
         const c = await code(currentName() || "-", chosen);
         const url = Site.verifyUrl(c);
-        try { await document.fonts.load("64px 'Great Vibes'"); await document.fonts.load("bold 40px 'Playfair Display'"); } catch (e) { /* fontes opcionais */ }
-        const logo = await loadLogo();
-        if (my !== drawing) return;
-        const W = 1080, H = 1350, ink = "#1d1736";
         cv.dataset.code = c;
-
-        // Fundo
-        if (chosen === "portfolio") {
-            const g = ctx.createLinearGradient(0, 0, W, H);
-            g.addColorStop(0, "#f6ecd6"); g.addColorStop(0.5, "#efe0c2"); g.addColorStop(1, "#e8d6b2");
-            ctx.fillStyle = g;
-        } else ctx.fillStyle = "#fbf6ee";
-        ctx.fillRect(0, 0, W, H);
-
-        // Circuitos discretos (avançado e portfólio)
-        if (chosen === "avancado" || chosen === "portfolio") {
-            ctx.save(); ctx.strokeStyle = "rgba(14,165,233,0.16)"; ctx.lineWidth = 2;
-            for (let k = 0; k < 9; k++) {
-                const y = 120 + k * 135, x = k % 2 ? W - 40 : 40, dir = k % 2 ? -1 : 1;
-                ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + dir * 70, y); ctx.lineTo(x + dir * 100, y + 30); ctx.lineTo(x + dir * 150, y + 30); ctx.stroke();
-                ctx.beginPath(); ctx.arc(x + dir * 150, y + 30, 5, 0, Math.PI * 2); ctx.stroke();
-            }
-            ctx.restore();
+        if (!document.getElementById("kc-style")) {
+            const st = document.createElement("style"); st.id = "kc-style"; st.textContent = CERT_CSS; document.head.appendChild(st);
         }
-
-        // Moldura
-        const gold = chosen === "avancado" || chosen === "portfolio";
-        ctx.strokeStyle = gold ? "#c9a227" : "#cbbfa8"; ctx.lineWidth = gold ? 6 : 3; ctx.strokeRect(28, 28, W - 56, H - 56);
-        ctx.strokeStyle = gold ? "rgba(201,162,39,.5)" : "rgba(29,23,54,.15)"; ctx.lineWidth = 1.5; ctx.strokeRect(44, 44, W - 88, H - 88);
-
-        // Logo
-        if (logo) ctx.drawImage(logo, W / 2 - 160, 66, 320, 128);
-
-        // Selo
-        const [s1, s2, s3] = sealColors(info.seal);
-        const sx = W - 142, sy = 150, sr = 74;
-        const sg = ctx.createRadialGradient(sx - 20, sy - 25, 10, sx, sy, sr);
-        sg.addColorStop(0, s1); sg.addColorStop(0.7, s2); sg.addColorStop(1, s3);
-        ctx.fillStyle = sg; ctx.beginPath(); ctx.arc(sx, sy, sr, 0, Math.PI * 2); ctx.fill();
-        ctx.strokeStyle = "rgba(255,255,255,.7)"; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(sx, sy, sr - 9, 0, Math.PI * 2); ctx.stroke();
-        ctx.fillStyle = info.seal === "prata" ? "#2b3038" : "#2a1606"; ctx.textAlign = "center";
-        const sealTxt = chosen === "portfolio" ? ["PORTFÓLIO", "COMPLETO", "3 projetos"] : [info.label];
-        ctx.font = `bold ${sealTxt.length > 1 ? 17 : info.label.length > 10 ? 16 : 22}px 'JetBrains Mono', monospace`;
-        sealTxt.forEach((t, k) => ctx.fillText(t, sx, sy + 6 + (k - (sealTxt.length - 1) / 2) * 22));
-
-        // Título e nome
-        ctx.fillStyle = ink; ctx.textAlign = "center";
-        ctx.font = "600 30px 'JetBrains Mono', monospace";
-        if ("letterSpacing" in ctx) { ctx.letterSpacing = "8px"; ctx.fillText("CERTIFICADO DE CONCLUSÃO", W / 2 + 4, 272); ctx.letterSpacing = "0px"; }
-        else ctx.fillText("CERTIFICADO DE CONCLUSÃO", W / 2, 272);
-        ctx.font = "26px Georgia, serif"; ctx.fillStyle = "#4b4466";
-        ctx.fillText("Certificamos que", W / 2, 330);
-        let fs = 64; ctx.font = `bold ${fs}px 'Playfair Display', Georgia, serif`;
-        while (ctx.measureText(name).width > W - 200 && fs > 34) { fs -= 2; ctx.font = `bold ${fs}px 'Playfair Display', Georgia, serif`; }
-        ctx.fillStyle = ink; ctx.fillText(name, W / 2, 412);
-        ctx.strokeStyle = "rgba(29,23,54,.25)"; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(220, 436); ctx.lineTo(W - 220, 436); ctx.stroke();
-        ctx.font = "26px Georgia, serif"; ctx.fillStyle = "#4b4466";
-        ctx.fillText("concluiu o curso", W / 2, 482);
-        ctx.font = "bold 32px Georgia, serif"; ctx.fillStyle = ink;
-        ctx.fillText(KORA.course, W / 2, 528);
-        const d = new Date();
-        ctx.font = "22px 'JetBrains Mono', monospace"; ctx.fillStyle = "#4b4466";
-        ctx.fillText(`Carga horária estimada: ${info.hours()} horas  ·  Concluído em ${d.toLocaleDateString("pt-BR")}`, W / 2, 570);
-
-        // Competências
-        let y = 632; const lx = 120;
-        ctx.textAlign = "left"; ctx.fillStyle = "#7c4dff"; ctx.font = "bold 20px 'JetBrains Mono', monospace";
-        ctx.fillText("COMPETÊNCIAS", lx, y); y += 36;
-        ctx.fillStyle = ink; ctx.font = "24px Georgia, serif";
-        info.skills().slice(0, 5).forEach(s => { ctx.fillText("•  " + s, lx, y); y += 34; });
-
-        // Projetos
-        const projs = projectLines(chosen);
-        if (projs.length) {
-            y += 14;
-            ctx.fillStyle = "#7c4dff"; ctx.font = "bold 20px 'JetBrains Mono', monospace";
-            ctx.fillText("PROJETOS DE PORTFÓLIO", lx, y); y += 36;
-            projs.forEach(p => {
-                ctx.fillStyle = ink; ctx.font = "bold 23px Georgia, serif";
-                ctx.fillText("•  " + p.name, lx, y);
-                const nw = ctx.measureText("•  " + p.name).width;
-                ctx.font = "19px 'JetBrains Mono', monospace"; ctx.fillStyle = "#3f6df5";
-                const link = p.url ? p.url.replace(/^https?:\/\//, "") : "";
-                if (link) {
-                    if (lx + nw + 24 + ctx.measureText(link).width < W - 110) ctx.fillText(link, lx + nw + 24, y);
-                    else { y += 28; ctx.fillText(link, lx + 34, y); }
-                }
-                y += 36;
-            });
+        let host = document.getElementById("kc-host");
+        if (!host) {
+            host = document.createElement("div"); host.id = "kc-host";
+            host.style.cssText = "position:fixed;left:-20000px;top:0;width:1080px;height:1350px;pointer-events:none;";
+            document.body.appendChild(host);
         }
-
-        // Linha final logo abaixo dos projetos: assinatura à esquerda, verificação e QR à direita
-        const top = y + 34;
-        const sigCx = 90 + 215;
-        ctx.textAlign = "center"; ctx.fillStyle = ink;
-        ctx.font = "52px 'Great Vibes', 'Brush Script MT', cursive";
-        ctx.fillText("Márcia R. Campos", sigCx, top + 48);
-        ctx.strokeStyle = ink; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(90, top + 66); ctx.lineTo(520, top + 66); ctx.stroke();
-        ctx.font = "21px Georgia, serif"; ctx.fillStyle = ink;
-        ctx.fillText("Márcia Rodrigues Campos", sigCx, top + 96);
-        ctx.font = "18px Georgia, serif"; ctx.fillStyle = "#6b6458";
-        ctx.fillText("Founder · Kora EduTech", sigCx, top + 122);
-
-        const qr = qrCanvas(url);
-        const boxX = W - 90 - 146, boxY = top - 14;
-        if (qr) { ctx.fillStyle = "#fff"; ctx.fillRect(boxX, boxY, 146, 146); ctx.drawImage(qr, boxX + 8, boxY + 8, 130, 130); }
-        const tx = qr ? boxX - 14 : W - 90;
-        const maxTw = tx - 560;
-        const where = (Site.verifyBase() || "site da Kora EduTech").replace(/^https?:\/\//, "");
-        ctx.textAlign = "right";
-        const fit = (txt, weight, size) => { let f = size; ctx.font = `${weight} ${f}px 'JetBrains Mono', monospace`; while (ctx.measureText(txt).width > maxTw && f > 11) { f--; ctx.font = `${weight} ${f}px 'JetBrains Mono', monospace`; } };
-        fit("verifique em", "400", 16); ctx.fillStyle = "#6b6458"; ctx.fillText("verifique em", tx, top + 82);
-        fit(where, "600", 16); ctx.fillStyle = ink; ctx.fillText(where, tx, top + 106);
-        ctx.font = "400 16px 'JetBrains Mono', monospace"; ctx.fillStyle = "#6b6458";
-        const codeTxt = "código "; const cw = (ctx.font = "600 16px 'JetBrains Mono', monospace", ctx.measureText(c).width);
-        ctx.fillStyle = ink; ctx.fillText(c, tx, top + 130);
-        ctx.font = "400 16px 'JetBrains Mono', monospace"; ctx.fillStyle = "#6b6458"; ctx.fillText(codeTxt, tx - cw, top + 130);
-
-        // Rodapé centralizado
-        ctx.textAlign = "center"; ctx.font = "15px Georgia, serif"; ctx.fillStyle = "#6b6458";
-        ctx.fillText("Curso livre de formação prática.", W / 2, H - 58);
+        host.innerHTML = certHtml(name, c, url);
+        // Encolhe nomes muito longos para caberem numa linha
+        const nm = host.querySelector(".nome");
+        let fs = 64; while (nm.offsetWidth > 900 && fs > 34) { fs -= 2; nm.style.fontSize = fs + "px"; }
+        const cb = host.querySelector(".curso b");
+        let cs = 34; while (cb.offsetWidth > 900 && cs > 24) { cs -= 1; cb.style.fontSize = cs + "px"; }
+        const kc = host.firstElementChild, rod = host.querySelector(".rodape");
+        if (kc.scrollHeight > 1350) rod.style.paddingTop = Math.max(12, 48 - (kc.scrollHeight - 1350)) + "px";
+        try { await document.fonts.load("700 64px Fraunces"); await document.fonts.load("52px 'Great Vibes'"); await document.fonts.ready; } catch (e) { /* fontes opcionais */ }
+        await Promise.all([...host.querySelectorAll("img")].map(i => i.complete ? 0 : new Promise(r => { i.onload = i.onerror = r; })));
+        if (my !== drawing) return;
+        if (typeof html2canvas !== "function") { Platform.toast("A biblioteca do certificado não carregou. Verifique a conexão.", "error"); return; }
+        const shot = await html2canvas(host.firstElementChild, { scale: 1, width: 1080, height: 1350, backgroundColor: null, logging: false, useCORS: true });
+        if (my !== drawing) return;
+        const ctx = cv.getContext("2d");
+        ctx.clearRect(0, 0, 1080, 1350);
+        ctx.drawImage(shot, 0, 0, 1080, 1350);
     }
 
     function fileBase() {
